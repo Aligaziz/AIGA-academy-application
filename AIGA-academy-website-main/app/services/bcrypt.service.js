@@ -10,3 +10,18 @@ module.exports = {
 	},
 	comparePasswords: (password, hash) => bcrypt.compareSync(password, hash)
 }
+function hashPassword(userOrPassword) {
+	const password = typeof userOrPassword === 'string'
+		? userOrPassword
+		: userOrPassword?.password;
+
+	if (isHashed(password)) {
+		return password;
+	}
+
+	return bcrypt.hashSync(password, 10);
+}
+
+function isHashed(password) {
+	return typeof password === 'string' && password.startsWith('$2');
+}
