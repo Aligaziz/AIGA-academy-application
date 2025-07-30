@@ -42,10 +42,25 @@ app.set('view engine', 'pug');
 app.use(express.static('public'));
 
 // Secure express app.
+const helmet = require('helmet');
+
+// Secure Express app with Helmet.
 app.use(helmet({
-	dnsPrefetchControl: false,
-	frameguard: false,
-	ieNoOpen: false,
+  dnsPrefetchControl: { allow: false }, // Prevent DNS prefetching for privacy.
+  frameguard: { action: 'deny' }, // Prevent clickjacking by disallowing iframes.
+  ieNoOpen: true, // Prevent untrusted files from opening in IE.
+  contentSecurityPolicy: { // Mitigate XSS by restricting sources.
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      connectSrc: ["'self'", process.env.ALLOWED_ORIGINS || 'http://localhost:3000'],
+      imgSrc: ["'self'", 'data:'],
+    },
+  },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }, // Limit referrer information.
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true }, // Enable HSTS for HTTPS.
+  xssFilter: true, // Enable XSS filter for legacy browsers.
 }));
 
 // Parsing the request bodies.
