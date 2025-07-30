@@ -3,8 +3,6 @@ const Sequelize = require('sequelize');
 // Connection configs.
 const Configs = require('#configs/database');
 
-
-// Make first database connection.
 const connection = new Sequelize(
 	Configs.database,
 	Configs.username,
@@ -15,91 +13,91 @@ const connection = new Sequelize(
 		dialect: Configs.dialect,
 		pool: Configs.pool,
 		charset: Configs.charset,
-		collate: Configs.collate, 
+		collate: Configs.collate,
 		timestamps: Configs.timestamps,
 		logging: Configs.logging
 	}
 );
+
+let _isAssociated = false; // 👈 кэш ассоциаций
 
 module.exports = connection;
 module.exports.service = DBService;
 module.exports.migrate = _migrate;
 
 function DBService() {
-
-	const _authenticateDB = () => (
-		connection.authenticate()
-	);
+	const _authenticateDB = () => connection.authenticate();
 
 	const _start = async () => {
-		try{
-			// Test database connection.
+		try {
 			_authenticateDB();
 
-			// Include all models for associations.
+			// Подключаем все модели.
 			require('#models/');
 
-			// Get newly included models from db connection.
 			const models = connection.models;
 
-			// Associate all models with each other.
+			// Ассоциируем один раз.
 			await _associateModels(models);
 
 			console.info(`Database info: ${Object.keys(models).length} models associated.`);
 			console.info('\x1b[1m', 'Connection to the database is fully operational', '\x1b[0m');
 
-			return Promise.resolve(this.connection);
-		}
-		catch(error) {
-			console.error('Unable to connect to the database:', error)
+			return Promise.resolve(connection);
+		} catch (error) {
+			console.error('Unable to connect to the database:', error);
 			return Promise.reject(error);
 		}
 	};
 
 	return {
-		start:_start
+		start: _start
 	};
-};
+}
 
-function _migrate(environment, force=false) {
-	// Validation of NODE_ENV.
-	if (environment !== 'development'){
+function _migrate(environment, force = false) {
+	if (environment !== 'development') {
 		console.error(`Could not migrate in env ${environment}`);
 		return;
-	}
-	// Validation of 'force' parameter.
-	else if (typeof force !== 'boolean'){
+	} else if (typeof force !== 'boolean') {
 		console.error("Wrong force parameter; must be boolean");
 		return;
 	}
 
 	const _successfulDBMigration = () => (
 		console.log('Successful migration')
-	)
+	);
 
 	return connection
-	.authenticate()
-	.then(() => {
-		console.log('Models to sync:', connection.models);
-		
-		return _associateModels(connection.models)
-		.then(() => connection.sync({ force }))
-		.then(() => _successfulDBMigration())
-		.catch(error => console.error(error));
-	})
-	.catch(error => console.error(error));
+		.authenticate()
+		.then(() => {
+			console.log('Models to sync:', connection.models);
+
+			return _associateModels(connection.models)
+				.then(() => connection.sync({ force }))
+				.then(_successfulDBMigration)
+				.catch(console.error);
+		})
+		.catch(console.error);
 }
 
+// С добавленным кэшированием
 async function _associateModels(models) {
-	return new Promise((resolve, reject) => {
-		try{
-			Object.keys(models).map(modelName => (
-				models[modelName].associate(models)
-			));
+	if (_isAssociated) {
+		return models; // уже связаны
+	}
 
-			return resolve(models);
-		}
-		catch(error){
+	return new Promise((resolve, reject) => {
+		try {
+			Object.keys(models).forEach(modelName => {
+				if (typeof models[modelName].associate === 'function') {
+					models[modelName].associate(models);
+				}
+			});
+
+			_isAssociated = true; // кэшируем ибру
+			resolve(models);
+		} catch (error) {
 			reject(error);
 		}
 	});
