@@ -75,13 +75,13 @@ async function _beforeStart() {
 // Initialize server:
 _beforeStart()
 .then(() => {
-	server.listen(serverConfig.port, () => {
-		// Server is up!
-		console.info(`Server is running on port: ${serverConfig.port}`);
-	});
+  const port = process.env.PORT || serverConfig.port || 3000;
+  server.listen(port, () => {
+    console.info(`Server is running on port: ${port}`);
+  });
 })
 .catch((error) => {
-	console.error('Could not start server:', error);
+  console.error('Could not start server:', error);
 });
 // Initialize server\
 
@@ -114,7 +114,3 @@ function _gracefulShutdown(exit=false) {
 // Handle process errors\
 
 initSocket(server);
-
-server.listen(process.env.PORT || 3000, () => {
-  console.log('Server with socket.io running');
-});
