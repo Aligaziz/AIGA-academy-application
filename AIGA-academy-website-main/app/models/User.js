@@ -53,9 +53,15 @@ const User = database.define(
 
 // Hooks:
 User.beforeValidate((user, options) => {
-	// Hash user's password.
-	user.password = bcryptSevice.hashPassword(user);
-})
+	const password = user.password;
+
+	// Проверяем: уже ли это bcrypt-хеш
+	const isHashed = typeof password === 'string' && password.startsWith('$2');
+
+	if (!isHashed) {
+		user.password = bcryptSevice.hashPassword(user);
+	}
+});
 // Hooks\
 
 // Static methods:
