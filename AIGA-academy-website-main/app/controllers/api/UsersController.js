@@ -58,41 +58,49 @@ function UsersController() {
 
 	// Auth:
 	const _register = async (req, res) => {
-	try {
-		const email = req.body?.email;
-		const password = req.body?.password;
-		const firstName = req.body?.firstName;
-		const lastName = req.body?.lastName;
-		const role = req.body?.role; // 👈
+  try {
+    const email = req.body?.email?.trim();
+    const password = req.body?.password;
+    const firstName = req.body?.firstName?.trim();
+    const lastName = req.body?.lastName?.trim();
+    const role = req.body?.role?.toLowerCase();
 
-		// Проверка: допустимая ли роль
-		const allowedRoles = ['client', 'coach', 'parent'];
-		if (!allowedRoles.includes(role)) {
-			const err = new Err("Invalid role");
-			err.name = "ValidationError";
-			throw err;
-		}
+    const allowedRoles = ['client', 'coach', 'parent'];
 
-		const [tokens, user] = await usersFacade.register({
-			email,
-			password,
-			firstName,
-			lastName,
-			role // 👈 передаём в фасад
-		});
+    // Валидация всех полей
+    if (
+      !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+      !password || password.length < 6 ||
+      !firstName || firstName.length < 2 ||
+      !lastName || lastName.length < 2 ||
+      !allowedRoles.includes(role)
+    ) {
+      const err = new Err("Invalid input: check email, password, name and role");
+      err.name = "ValidationError";
+      throw err;
+    }
 
-		return createOKResponse({
-			res,
-			content: {
-				tokens,
-				user: user.toJSON()
-			}
-		});
-	} catch (error) {
-		console.error("UsersController._register error: ", error);
-		return _processError(error, req, res);
-	}
-}
+    const [tokens, user] = await usersFacade.register({
+      email,
+      password,
+      firstName,
+      lastName,
+      role
+    });
+
+    return createOKResponse({
+      res,
+      content: {
+        tokens,
+        user: user.toJSON()
+      }
+    });
+  } catch (error) {
+    console.error("UsersController._register error: ", error);
+    return _processError(error, req, res);
+  }
+};
+
 
 	const _login = async (req, res) => {
 		try {
