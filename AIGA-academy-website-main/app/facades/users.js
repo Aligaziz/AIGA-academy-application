@@ -27,11 +27,11 @@ async function _register({ email, password, role }) {
 	try{
 		// Try to create new user.
 		const user = await User.create({
-			email,
-			password,
-			firstname,
-			lastname,
-			role
+		  email,
+		  password,
+		  firstName,
+		  lastName,
+		  role
 		});
 
 		// Issue new access and refresh JWT.
