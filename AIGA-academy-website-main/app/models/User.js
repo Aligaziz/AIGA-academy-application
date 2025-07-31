@@ -36,14 +36,6 @@ const User = database.define(
 		  type: DataTypes.ENUM('client', 'coach', 'parent'),
 		  defaultValue: 'client',
 		}
-		phone: {
-		  type: DataTypes.STRING,
-		  allowNull: true,
-		},
-		bio: {
-		  type: DataTypes.TEXT,
-		  allowNull: true,
-		},
 
 		// Example of virtual field:
 		fullName: {
