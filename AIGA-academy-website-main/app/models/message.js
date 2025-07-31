@@ -14,6 +14,10 @@ module.exports = (sequelize) => {
       type: DataTypes.TEXT,
       allowNull: false,
     },
+    room: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
   }, {
     tableName: 'messages',
     timestamps: true, // добавляет createdAt, updatedAt
@@ -21,7 +25,3 @@ module.exports = (sequelize) => {
 
   return Message;
 };
-room: {
-  type: DataTypes.STRING,
-  allowNull: true, // null → 1-на-1 чат, строка → групповой чат
-}
