@@ -3,7 +3,7 @@
  */
 
 // Info about current and allowed environments.
-const environments = require('#configs/envinorments');
+const environments = require('#configs/environments');
 // Middleware for parsing requests bodies.
 const bodyParser = require('body-parser');
 // Express.
@@ -32,7 +32,7 @@ const routes = require('#routes/');
 
 // Allow cross origin requests
 // (configure to only allow requests from certain origins).
-app.use(cors());
+app.use(cors({ origin: process.env.ALLOWED_ORIGINS || 'http://localhost:3000' }));
 
 // Set views path.
 app.set('views', __dirname+'/views');
@@ -89,12 +89,13 @@ async function _beforeStart() {
 
 // Initialize server:
 _beforeStart()
+await db.start();
 .then(() => {
   const port = process.env.PORT || serverConfig.port || 3000;
   try {
-	app.listen(PORT, () => {
-		console.log(`Server is running on http://localhost:${PORT}`);
-	});
+	app.listen(port, () => {
+  	console.log(`Server is running on http://localhost:${port}`);
+});
 } catch (err) {
 	console.error('Failed to start server:', err);
 	process.exit(1);
