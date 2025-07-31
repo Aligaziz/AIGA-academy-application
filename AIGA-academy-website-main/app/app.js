@@ -8,7 +8,7 @@ const environments = require('#configs/envinorments');
 const bodyParser = require('body-parser');
 // Express.
 require('dotenv').config();
-
+require('./checkEnv');
 const express = require('express');
 const http = require('http');
 // Mild security.
