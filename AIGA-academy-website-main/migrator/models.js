@@ -4,5 +4,5 @@
 require('#models/User');
 require('#models/DisabledRefreshToken');
 require('#models/Transactions');
-require('#models/messege');
+require('#models/massege');
 // Add your models here ...
