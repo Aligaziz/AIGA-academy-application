@@ -7,8 +7,6 @@ const environments = require('#configs/envinorments');
 // Middleware for parsing requests bodies.
 const bodyParser = require('body-parser');
 // Express.
-require('dotenv').config();
-require('./checkEnv');
 const express = require('express');
 const http = require('http');
 // Mild security.
