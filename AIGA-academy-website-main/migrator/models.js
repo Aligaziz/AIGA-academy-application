@@ -4,8 +4,10 @@
 require('#models/User');
 require('#models/DisabledRefreshToken');
 require('#models/Transactions');
-require('#models/massege');
+require('#models/Message');
 require('#models/Lesson');
 require('#models/Booking');
 require('#models/CoachClient');
+require('#models/Progress');
+require('#models/Achievement');
 // Add your models here ...
