@@ -77,3 +77,7 @@ async function getLessons({ coachId, status }) {
   if (status) where.status = status;
   return await Lesson.findAll({ where, order: [['startTime', 'ASC']] });
 }
+async function getLessons({ coachId, where = {} }) {
+  where.coachId = coachId;
+  return await Lesson.findAll({ where, order: [['startTime', 'ASC']] });
+}
