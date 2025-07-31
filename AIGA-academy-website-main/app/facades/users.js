@@ -31,9 +31,7 @@ async function _register({ email, password, role }) {
 		  password,
 		  firstName,
 		  lastName,
-		  role,
-		  bio,
-		  phone
+		  role
 		});
 
 		// Issue new access and refresh JWT.
