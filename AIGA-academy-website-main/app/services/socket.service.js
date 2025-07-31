@@ -7,11 +7,8 @@ let io;
 
 function initSocket(server) {
   io = socketio(server, {
-    cors: {
-      origin: '*',
-      methods: ['GET', 'POST'],
-    },
-  });
+  cors: { origin: process.env.ALLOWED_ORIGINS || 'http://localhost:3000' }
+});
 
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
