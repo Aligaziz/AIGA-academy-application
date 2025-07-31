@@ -7,4 +7,5 @@ require('#models/Transactions');
 require('#models/massege');
 require('#models/Lesson');
 require('#models/Booking');
+require('#models/CoachClient');
 // Add your models here ...
