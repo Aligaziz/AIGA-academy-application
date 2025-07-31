@@ -77,3 +77,30 @@ module.exports = function LessonController() {
 
   return { createLesson: _createLesson, bookLesson: _bookLesson, validateBooking: _validateBooking, getLessons: _getLessons };
 };
+const _getMonthlySchedule = async (req, res) => {
+  try {
+    await [
+      param('coachId').isInt(),
+      param('year').isInt({ min: 2000, max: 2100 }),
+      param('month').isInt({ min: 1, max: 12 }),
+    ].map((check) => check.run(req));
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new Error(errors.array()[0].msg, { cause: { status: 400 } });
+    }
+    const coachId = parseInt(req.params.coachId);
+    const year = parseInt(req.params.year);
+    const month = parseInt(req.params.month) - 1; // 0-based
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 0);
+    const lessons = await lessonFacade.getLessons({
+      coachId,
+      where: {
+        startTime: { [Op.between]: [startDate, endDate] },
+      },
+    });
+    return createOKResponse({ res, content: { lessons } });
+  } catch (error) {
+    return createErrorResponse({ res, error, status: error.cause?.status || 500 });
+  }
+};
