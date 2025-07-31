@@ -1,4 +1,5 @@
-const { User, Transaction } = require('#models/Transactions');
+const { User } = require('#models/User');
+const { Transaction } = require('#models/Transactions');
 const { Err } = require('#factories/errors');
 const sequelize = require('#services/db.service');
 const logger = require('#services/logger');
