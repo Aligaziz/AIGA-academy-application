@@ -6,7 +6,7 @@ const missing = requiredEnv.filter((key) => !process.env[key]);
 
 if (missing.length > 0) {
 	throw new Error(
-		`❌ Missing required database environment variables: ${missing.join(', ')}`
+		`Missing required database environment variables: ${missing.join(', ')}`
 	);
 }
 
@@ -14,7 +14,7 @@ if (missing.length > 0) {
 const allowedDialects = ['mysql', 'postgres'];
 const dialect = process.env.DB_DIALECT ?? 'mysql';
 if (!allowedDialects.includes(dialect)) {
-	throw new Error(`❌ Invalid DB_DIALECT: "${dialect}". Allowed: ${allowedDialects.join(', ')}`);
+	throw new Error(`Invalid DB_DIALECT: "${dialect}". Allowed: ${allowedDialects.join(', ')}`);
 }
 
 module.exports = {
