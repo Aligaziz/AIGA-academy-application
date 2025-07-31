@@ -93,9 +93,14 @@ async function _beforeStart() {
 _beforeStart()
 .then(() => {
   const port = process.env.PORT || serverConfig.port || 3000;
-  server.listen(port, () => {
-    console.info(`Server is running on port: ${port}`);
-  });
+  try {
+	app.listen(PORT, () => {
+		console.log(`Server is running on http://localhost:${PORT}`);
+	});
+} catch (err) {
+	console.error('Failed to start server:', err);
+	process.exit(1);
+}
 })
 .catch((error) => {
   console.error('Could not start server:', error);
