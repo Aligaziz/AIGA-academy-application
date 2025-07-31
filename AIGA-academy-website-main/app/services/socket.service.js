@@ -35,7 +35,8 @@ function initSocket(server) {
 
       // Отправить сообщение себе и получателю (если в сети)
       socket.emit('message', message);
-      socket.broadcast.emit('message', message); // для простоты без комнат
+      socket.broadcast.emit('message', message); // с комнатами
+      socket.to(`user-${toUserId}`).emit('message', message);
     });
 
     socket.on('disconnect', () => {
