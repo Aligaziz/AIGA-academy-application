@@ -4,4 +4,5 @@
 require('./User');
 require('./DisabledRefreshToken');
 require('./messege');
+require('./Transactions')
 // Add your models here ...
