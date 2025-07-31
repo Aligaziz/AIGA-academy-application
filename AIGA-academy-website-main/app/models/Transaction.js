@@ -14,6 +14,14 @@ module.exports = (sequelize) => {
       type: DataTypes.ENUM('deposit', 'withdraw', 'transfer'),
       allowNull: false
     },
+    lessonId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    productId: {
+      type: DataTypes.FLOAT,
+      allowNull: true
+    },
     amount: {
       type: DataTypes.FLOAT,
       allowNull: false
