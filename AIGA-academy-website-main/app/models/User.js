@@ -27,6 +27,11 @@ const User = database.define(
 			type: DataTypes.STRING(175),
 			allowNull: true
 		},
+		balance: {
+			  type: DataTypes.FLOAT,
+			  allowNull: false,
+			  defaultValue: 0.0,
+			},
 		role: {
 		  type: DataTypes.ENUM('client', 'coach', 'parent'),
 		  defaultValue: 'client',
