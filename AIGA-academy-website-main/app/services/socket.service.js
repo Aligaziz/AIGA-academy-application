@@ -1,8 +1,8 @@
 const socketio = require('socket.io');
 const jwt = require('jsonwebtoken');
 const { send } = require('#facades/chat');
-const { JWT_SECRET } = require('#configs/jwt');
-
+const { accessToken } = require('#configs/jwt');
+const user = jwt.verify(token, accessToken.secret);
 let io;
 
 function initSocket(server) {
