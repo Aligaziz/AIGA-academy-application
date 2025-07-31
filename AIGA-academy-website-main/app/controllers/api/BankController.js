@@ -7,9 +7,7 @@ module.exports = BankController;
 
 function BankController() {
   const validateAmount = [
-    body('amount')
-      .isFloat({ min: 0.01, max: 1000000 })
-      .withMessage('Amount must be a positive number between 0.01 and 1,000,000')
+   body('amount').isFloat({ min: 6000, max: 300000 }).withMessage('Amount must be between 6000 and 300000 for gym services'),
       .custom((value) => {
         if (!/^\d+(\.\d{1,2})?$/.test(value.toString())) {
           throw new Error('Amount must have at most 2 decimal places');
