@@ -5,4 +5,6 @@ require('#models/User');
 require('#models/DisabledRefreshToken');
 require('#models/Transactions');
 require('#models/massege');
+require('#models/Lesson');
+require('#models/Booking');
 // Add your models here ...
