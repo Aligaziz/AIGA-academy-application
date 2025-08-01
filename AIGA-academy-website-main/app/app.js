@@ -1,137 +1,135 @@
 /**
- * Main application file:
+ * Main application file.
+ * This file initializes the Express server, sets up middleware, connects to the database,
+ * and handles graceful shutdown.
  */
 
-// Info about current and allowed environments.
-const environments = require('#configs/environments');
-// Middleware for parsing requests bodies.
-const bodyParser = require('body-parser');
-// Express.
 const express = require('express');
 const http = require('http');
-// Mild security.
-const helmet = require('helmet');
-// Cross-origin requests middleware.
+const bodyParser = require('body-parser');
 const cors = require('cors');
-// для чатика сокет.ио
+const helmet = require('helmet');
 const { initSocket } = require('#services/socket.service');
-// Server configuration:
-// ORM.
+const environments = require('#configs/environments');
 const DB = require('#services/db.service');
-// Port info.
 const serverConfig = require('#configs/server');
-// Server configuration\
-
-// Express application.
-const app = express();
-// HTTP server (Do not use HTTPS, manage TLS with some proxy, like Nginx).
-const server = http.Server(app);
-// Routes.
 const routes = require('#routes/');
 
+// Инициализация Express приложения и HTTP сервера
+const app = express();
+const server = http.Server(app);
 
-// Allow cross origin requests
-// (configure to only allow requests from certain origins).
-app.use(cors({ origin: process.env.ALLOWED_ORIGINS || 'http://localhost:3000' }));
-
-// Set views path.
-app.set('views', __dirname+'/views');
-// Set template engine (Pug by default).
+// Middleware
+app.use(cors({ origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'] }));
+app.set('views', __dirname + '/views');
 app.set('view engine', 'pug');
-// Set folder for static contents.
 app.use(express.static('public'));
 
-// Secure express app.
-const helmet = require('helmet');
-
-// Secure Express app with Helmet.
+// Настройка безопасности с Helmet
 app.use(helmet({
-  dnsPrefetchControl: { allow: false }, // Prevent DNS prefetching for privacy.
-  frameguard: { action: 'deny' }, // Prevent clickjacking by disallowing iframes.
-  ieNoOpen: true, // Prevent untrusted files from opening in IE.
-  contentSecurityPolicy: { // Mitigate XSS by restricting sources.
+  dnsPrefetchControl: { allow: false }, // Предотвращение DNS prefetching для приватности
+  frameguard: { action: 'deny' }, // Запрет использования в iframe для защиты от clickjacking
+  ieNoOpen: true, // Предотвращение открытия неподтверждённых файлов в IE
+  contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
-      connectSrc: ["'self'", process.env.ALLOWED_ORIGINS || 'http://localhost:3000'],
+      connectSrc: ["'self'", ...(process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'])],
       imgSrc: ["'self'", 'data:'],
     },
   },
-  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }, // Limit referrer information.
-  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true }, // Enable HSTS for HTTPS.
-  xssFilter: true, // Enable XSS filter for legacy browsers.
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }, // Ограничение referrer
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true }, // HSTS для HTTPS
+  xssFilter: true, // Фильтр XSS для старых браузеров
 }));
 
-// Parsing the request bodies.
+// Парсинг тел запросов
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-// Setup routes.
+// Настройка маршрутов
 app.use(routes({ app }));
 
+// Глобальная ссылка на подключение к базе данных
+let dbConnection;
 
-// Reference to the active database connection.
-let db;
-
+// Асинхронная инициализация перед запуском
 async function _beforeStart() {
-	if (environments.allowed.indexOf(environments.current) === -1) {
-		console.error(`NODE_ENV is set to ${environments.current}, but only ${environments.allowed.toString()} are valid.`);
-		process.exit(1);
-	}
-
-	// Start ORM.
-	db = await DB.service(environments.current);
-	db.start();
-
-	return Promise.resolve();
-}
-
-// Initialize server:
-_beforeStart()
-await db.start();
-.then(() => {
-  const port = process.env.PORT || serverConfig.port || 3000;
   try {
-	app.listen(port, () => {
-  	console.log(`Server is running on http://localhost:${port}`);
-});
-} catch (err) {
-	console.error('Failed to start server:', err);
-	process.exit(1);
-}
-})
-.catch((error) => {
-  console.error('Could not start server:', error);
-});
-// Initialize server\
+    // Проверка допустимой среды
+    if (!environments.allowed.includes(environments.current)) {
+      throw new Error(`NODE_ENV is set to ${environments.current}, but only ${environments.allowed.join(', ')} are valid.`);
+    }
 
-// Handle process errors:
-process.on('unhandledRejection', (reason, p) => {
-	console.error(reason, 'Unhandled Rejection at Promise', p);
+    // Инициализация и запуск базы данных
+    dbConnection = await DB.service(environments.current);
+    await dbConnection.start();
+    console.log('Database connected successfully');
+  } catch (error) {
+    console.error('Failed to initialize application:', error);
+    throw error;
+  }
+}
+
+// Graceful shutdown
+function _gracefulShutdown(signal = 'SIGTERM') {
+  console.warn(`Received ${signal}. Shutting down gracefully...`);
+  const exitCode = 1;
+
+  // Закрытие сокет-соединений
+  initSocket(server).close(() => console.log('Socket connections closed'));
+
+  // Закрытие сервера
+  server.close(() => {
+    console.info('HTTP server closed');
+    if (dbConnection) {
+      dbConnection.stop().then(() => {
+        console.info('Database connection closed');
+        process.exit(exitCode);
+      }).catch(err => {
+        console.error('Error closing database:', err);
+        process.exit(exitCode);
+      });
+    } else {
+      process.exit(exitCode);
+    }
+  });
+
+  // Принудительное завершение через 5 секунд
+  setTimeout(() => {
+    console.warn('Could not close connections in time, forcing shutdown');
+    process.exit(exitCode);
+  }, 5000);
+}
+
+// Обработка сигналов завершения
+process.on('SIGTERM', _gracefulShutdown);
+process.on('SIGINT', _gracefulShutdown); // Например, Ctrl+C
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  _gracefulShutdown('Unhandled Rejection');
 });
-	
 process.on('uncaughtException', (error) => {
-	console.error(error, 'Uncaught Exception thrown');
-	
-	_gracefulShutdown(true);
+  console.error('Uncaught Exception:', error);
+  _gracefulShutdown('Uncaught Exception');
 });
 
-function _gracefulShutdown(exit=false) {
-	console.warn('Received SIGINT or SIGTERM. Shutting down gracefully...');
-	const exitCode = exit ? 1 : 0;
+// Запуск приложения
+async function startServer() {
+  try {
+    await _beforeStart();
+    const port = process.env.PORT || serverConfig.port || 3000;
+    server.listen(port, () => {
+      console.log(`Server is running on http://localhost:${port}`);
+    });
 
-	server.close(() => {
-		console.info('Closed out remaining connections.');
-		process.exit(exitCode);
-	});
-
-	// Force stop after 5 seconds:
-	setTimeout(() => {
-		console.warn('Could not close HTTP connections in time, forcefully shutting down');
-		process.exit(exitCode);
-	}, 5*1000);
+    // Инициализация сокетов после успешного старта
+    initSocket(server);
+  } catch (error) {
+    console.error('Server failed to start:', error);
+    process.exit(1);
+  }
 }
-// Handle process errors\
 
-initSocket(server);
+startServer();
